@@ -1,0 +1,30 @@
+﻿@page "/imagechange"
+@rendermode InteractiveServer
+<h3>Image Changer</h3>
+
+<div class="form-control" style="margin:20px; width:500px">
+    <label for="Image">Select Picture</label>
+    <InputFile id="Image" OnChange="HandleSelectedImage" class="form-control" />
+    <br />
+    <img src="@imageDataUrl" alt="Image" />
+</div>
+
+
+@code {
+    private IBrowserFile? selectedImage;
+    private PictureInformation pictureInformation = new PictureInformation();
+    private PictureFile pictureFile = new PictureFile();
+    private string imageDataUrl;
+
+    private void HandleSelectedImage(InputFileChangeEventArgs e)
+    {
+        selectedImage = e.File;
+
+        // method to convert to byte[]
+        // show image in the browser from byte[]
+
+    }
+    //private string selectedImage => selectedImage != null ? $"data:{selectedImage.ContentType};base64,{Convert.ToBase64String(selectedImage.Data)}" : "";
+
+
+}    
