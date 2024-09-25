@@ -1,4 +1,6 @@
 using ImageChanger.Components;
+using ImageChanger.Interfaces;
+using ImageChanger.Services;
 
 namespace ImageChanger
 {
@@ -11,6 +13,7 @@ namespace ImageChanger
             // Add services to the container.
             builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();
+            builder.Services.AddScoped<ISelectedPictureShowService, SelectedPictureShowService>();
 
             var app = builder.Build();
 
