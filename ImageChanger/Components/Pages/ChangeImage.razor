@@ -1,7 +1,7 @@
 ﻿@page "/imagechange"
 @rendermode InteractiveServer
 @inject ISelectedPictureShowService selectedPictureShowService
-<h3>Image Changer</h3>
+<h2>Image Changer</h2>
 
 <div class="form-control" style="margin:20px;width: 1230px">
     <label for="Image">Select Picture</label>
@@ -28,24 +28,51 @@
 @if (selectedImage != null)
 {
     <div class="form-control" style="margin:20px; width:500px">
-        <h4>Seclect modify options</h4>
-        <input type="checkbox" @bind="isSelectedFormatOption" /> <label>Change Uoutput Format</label>
-        @if(isSelectedFormatOption)
+        <h3>Select Modify Options</h3>
+        <input type="checkbox" @bind="isSelectedFormatOption" />
+        <label style="font-size:x-large">Change Output Format</label>
+        @if (isSelectedFormatOption)
         {
-            <ul>
-                <li>jpg</li>
-                <li>png</li>
-                <li>gif</li>
-                <li>webp</li>
-                <li>svg</li>
-                <li>pdf</li>
-            </ul>
+            <select @bind="selectedFormat" class="form-control">
+                <option value="jpg">JPG</option>
+                <option value="png">PNG</option>
+                <option value="gif">GIF</option>
+                <option value="webp">WEBP</option>
+                <option value="svg">SVG</option>
+                <option value="pdf">PDF</option>
+            </select>
         }
-        <p>Uoutput max size</p>
-        <input type="number" /> px
-        <p>Uoutput specific size</p>
-        <input type="number" /> px X <input type="number" /> px
-        <br />
+        <br/>
+        <input type="checkbox" @bind="changeSize"/>
+        <label style="font-size:x-large">Change Output Sizing</label>
+        <br/>
+        @if (changeSize)
+        {
+            <div class="form-control" style="margin:20px; width:450px">
+                <input type="checkbox" @bind="maxWH" />
+                <label>Output max size in pixels. </label>
+                @if (maxWH)
+                {
+                    <div class="form-control" style="margin:20px; width:350px">
+                        <label>Inset max WIDTH or HEIGHT in pixels</label>
+                        <input type="number" @bind="maxOutputSize" />
+                    </div>
+                }
+                    <br />
+                    <input type="checkbox" @bind="specificWH" />
+                    <label> Output Specific Size </label>
+                @if (specificWH)
+                {
+                    <div class ="form-control" style="margin:20px; width:350px">
+                        <label>Width</label><br />
+                        <input type="number" @bind="outputWidth" />
+                        <br />
+                        <label>Height</label><br />
+                        <input type="number" @bind="outputHeight" />
+                    </div>
+                }
+            </div>     
+        }
     </div>
 }
     
@@ -56,7 +83,14 @@
     private PictureInformation pictureInformation = new PictureInformation();
     //private PictureFile pictureFile = new PictureFile();
     private string? imageUrl;
-    bool isSelectedFormatOption = false;
+    private bool isSelectedFormatOption = false; 
+    private string selectedFormat = "jpg"; // Stores the selected format
+    private bool changeSize = false;
+    private bool maxWH = false;
+    private bool specificWH = false;
+    private int maxOutputSize = 0; // Stores the max size for output
+    private int outputWidth = 0; // Stores the width for specific size
+    private int outputHeight = 0; // Stores the height for specific size
 
     private async Task HandleSelectedImage(InputFileChangeEventArgs e)
     {

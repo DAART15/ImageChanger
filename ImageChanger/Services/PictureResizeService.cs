@@ -4,7 +4,7 @@ namespace ImageChanger.Services
 {
     public class PictureResizeService
     {
-        public void ResizePicture(PictureFile file, int width, int height, string format)
+        public void ResizePicture(PictureFile file,int maxWH, int width, int height, string format)
         {
            
         }
