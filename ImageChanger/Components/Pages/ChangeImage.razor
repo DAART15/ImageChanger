@@ -10,12 +10,14 @@
     @if (selectedImage != null)
     {
         <label>Name: @selectedImage.Name </label>
-        <br />
+        <br/>
         <label>Size: @(Math.Round(selectedImage.Size / 1024.0 / 1024.0, 2)) MB</label>
         <br />
         <label>Size: @(Math.Round(selectedImage.Size / 1024.0, 2)) KB</label>
         <br />
         <label>Date: @selectedImage.LastModified.DateTime </label>
+        <br />
+        <label>Format: @selectedImage.ContentType </label>
         <br />
         @if (!string.IsNullOrEmpty(imageUrl))
         {
@@ -23,18 +25,38 @@
         }
     }
 </div>
-
-<div class="form-control" style="margin:20px; width:500px">
-    <label>Seclect modify options</label>
-    <br />
-</div>    
+@if (selectedImage != null)
+{
+    <div class="form-control" style="margin:20px; width:500px">
+        <h4>Seclect modify options</h4>
+        <input type="checkbox" @bind="isSelectedFormatOption" /> <label>Change Uoutput Format</label>
+        @if(isSelectedFormatOption)
+        {
+            <ul>
+                <li>jpg</li>
+                <li>png</li>
+                <li>gif</li>
+                <li>webp</li>
+                <li>svg</li>
+                <li>pdf</li>
+            </ul>
+        }
+        <p>Uoutput max size</p>
+        <input type="number" /> px
+        <p>Uoutput specific size</p>
+        <input type="number" /> px X <input type="number" /> px
+        <br />
+    </div>
+}
+    
 
 
 @code {
     private IBrowserFile? selectedImage;
     private PictureInformation pictureInformation = new PictureInformation();
-    private PictureFile pictureFile = new PictureFile();
+    //private PictureFile pictureFile = new PictureFile();
     private string? imageUrl;
+    bool isSelectedFormatOption = false;
 
     private async Task HandleSelectedImage(InputFileChangeEventArgs e)
     {
