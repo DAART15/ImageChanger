@@ -1,31 +1,37 @@
 ﻿@page "/imagechange"
 @rendermode InteractiveServer
 @inject ISelectedPictureShowService selectedPictureShowService
+@inject IPictureResizeService pictureResizeService
 <h2>Image Changer</h2>
 
 <div class="form-control" style="margin:20px;width: 1230px">
     <label for="Image">Select Picture</label>
     <InputFile id="Image" OnChange="HandleSelectedImage" class="form-control" />
     <br />
-    @if (selectedImage != null)
+    @if (pictureFile.File != null)
     {
-        <label>Name: @selectedImage.Name </label>
-        <br/>
-        <label>Size: @(Math.Round(selectedImage.Size / 1024.0 / 1024.0, 2)) MB</label>
+        <label>Name: @pictureFile.File.Name </label>
         <br />
-        <label>Size: @(Math.Round(selectedImage.Size / 1024.0, 2)) KB</label>
+        <label>Size: @(Math.Round(pictureFile.File.Size / 1024.0 / 1024.0, 2)) MB</label>
         <br />
-        <label>Date: @selectedImage.LastModified.DateTime </label>
+        <label>Size: @(Math.Round(pictureFile.File.Size / 1024.0, 2)) KB</label>
         <br />
-        <label>Format: @selectedImage.ContentType </label>
+        <label>Date: @pictureFile.File.LastModified.DateTime </label>
         <br />
-        @if (!string.IsNullOrEmpty(imageUrl))
+        <label>Format: @pictureInformation.Format </label>
+        <br />
+        <label>Width (px): @pictureInformation.Width </label>
+        <br />
+        <label>Height (px): @pictureInformation.Height </label>
+        <br />
+        @if (!string.IsNullOrEmpty(pictureInformation.Url))
         {
-            <img src="@imageUrl" alt="Image" style="max-width:1200px;" />
+            <img src="@pictureInformation.Url" alt="Image" style="max-width:1200px;" />
         }
     }
 </div>
-@if (selectedImage != null)
+
+@if (pictureFile.File != null)
 {
     <div class="form-control" style="margin:20px; width:500px">
         <h3>Select Modify Options</h3>
@@ -33,70 +39,118 @@
         <label style="font-size:x-large">Change Output Format</label>
         @if (isSelectedFormatOption)
         {
-            <select @bind="selectedFormat" class="form-control">
-                <option value="jpg">JPG</option>
-                <option value="png">PNG</option>
-                <option value="gif">GIF</option>
-                <option value="webp">WEBP</option>
-                <option value="svg">SVG</option>
-                <option value="pdf">PDF</option>
+            <select @bind="selectedOutputFormat" class="form-control">
+                <option value="Jpeg" selected>JPG</option>
+                <option value="Icon">ICON</option>
+                <option value="Png">PNG</option>
+                <option value="Gif">GIF</option>
+                <option value="Tiff">TIFF</option>
+                <option value="Exif">Exif</option>
+                <option value="Emf">Emf</option>
+                <option value="Bmp">Bmp</option>
+                <option value="Wmf">Wmf</option>
+                <option value="MemoryBmp">Memory Bmp</option>
             </select>
         }
-        <br/>
-        <input type="checkbox" @bind="changeSize"/>
+        <br />
+        <input type="checkbox" @bind="changeSize" />
         <label style="font-size:x-large">Change Output Sizing</label>
-        <br/>
+        <br />
         @if (changeSize)
         {
             <div class="form-control" style="margin:20px; width:450px">
-                <input type="checkbox" @bind="maxWH" />
-                <label>Output max size in pixels. </label>
+                <input type="checkbox" @onchange="ToggleMaxWH" checked="@maxWH" />
+                <label>Output max size in pixels.</label>
                 @if (maxWH)
                 {
                     <div class="form-control" style="margin:20px; width:350px">
-                        <label>Inset max WIDTH or HEIGHT in pixels</label>
+                        <label>Insert max WIDTH or HEIGHT in pixels</label>
                         <input type="number" @bind="maxOutputSize" />
                     </div>
                 }
-                    <br />
-                    <input type="checkbox" @bind="specificWH" />
-                    <label> Output Specific Size </label>
+                <br />
+                <input type="checkbox" @onchange="ToggleSpecificWH" checked="@specificWH" />
+                <label> Output Specific Size </label>
                 @if (specificWH)
                 {
-                    <div class ="form-control" style="margin:20px; width:350px">
-                        <label>Width</label><br />
+                    <div class="form-control" style="margin:20px; width:350px">
+                        <label>Width (px)</label><br />
                         <input type="number" @bind="outputWidth" />
                         <br />
-                        <label>Height</label><br />
+                        <label>Height (px)</label><br />
                         <input type="number" @bind="outputHeight" />
                     </div>
                 }
-            </div>     
+            </div>
         }
+        <button class="btn btn-primary" @onclick="DoChanges">Do Changes</button>
     </div>
-}
-    
+    @if (pictureInformation2.Url != null)
+    {
+        <div class="form-control" style="margin:20px;width: 1230px">
+            <label>Changed Image</label>
+            <br />
+            <label>Name: @pictureInformation2.FileName </label>
+            <br />
+            <label>Size: @(Math.Round(pictureInformation2.FileSize.Value / 1024.0 / 1024.0, 2)) MB</label>
+            <br />
+            <label>Size: @(Math.Round(pictureInformation2.FileSize.Value / 1024.0, 2)) KB</label>
+            <br />
 
+            <label>Format: @pictureInformation2.Format </label>
+            <br />
+            <label>Width (px): @pictureInformation2.Width </label>
+            <br />
+            <label>Height (px): @pictureInformation2.Height </label>
+            <br />
+            <img src="@pictureInformation2.Url" alt="Image" style="max-width:1200px;" />
+        </div>
+        <button class="btn btn-primary" >Download</button>
+    }
+}
 
 @code {
-    private IBrowserFile? selectedImage;
     private PictureInformation pictureInformation = new PictureInformation();
-    //private PictureFile pictureFile = new PictureFile();
-    private string? imageUrl;
-    private bool isSelectedFormatOption = false; 
-    private string selectedFormat = "jpg"; // Stores the selected format
+    private PictureInformation pictureInformation2 = new PictureInformation();
+    private PictureFile pictureFile = new PictureFile();
+    private string? changedImageUrl;
+    private bool isSelectedFormatOption = false;
+    private string? selectedOutputFormat;
     private bool changeSize = false;
     private bool maxWH = false;
     private bool specificWH = false;
-    private int maxOutputSize = 0; // Stores the max size for output
-    private int outputWidth = 0; // Stores the width for specific size
-    private int outputHeight = 0; // Stores the height for specific size
+    private int maxOutputSize = 0;
+    private int outputWidth = 0;
+    private int outputHeight = 0;
 
     private async Task HandleSelectedImage(InputFileChangeEventArgs e)
     {
-        selectedImage = e.File;
-        imageUrl = await selectedPictureShowService.ReturnSelectedPictureAsUrl(selectedImage);
+        pictureFile.File = e.File;
+        pictureInformation = await selectedPictureShowService.ReturnSelectedPictureAsUrl(pictureFile);
+    }
+    private void ToggleMaxWH(ChangeEventArgs e)
+    {
+        maxWH = (bool)e.Value;
+        if (maxWH)
+        {
+            specificWH = false;
+            outputWidth = 0;
+            outputHeight = 0;
+        }
     }
 
+    private void ToggleSpecificWH(ChangeEventArgs e)
+    {
+        specificWH = (bool)e.Value;
+        if (specificWH)
+        {
+            maxWH = false;
+            maxOutputSize = 0;
+        }
+    }
 
-}    
+    private async void DoChanges()
+    {
+        pictureInformation2 = await pictureResizeService.ResizePicture(pictureFile, maxOutputSize, outputWidth, outputHeight, selectedOutputFormat);
+    }
+}   

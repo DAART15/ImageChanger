@@ -1,9 +1,10 @@
-﻿using Microsoft.AspNetCore.Components.Forms;
+﻿using ImageChanger.Models;
+using Microsoft.AspNetCore.Components.Forms;
 
 namespace ImageChanger.Interfaces
 {
     public interface ISelectedPictureShowService
     {
-        Task<string> ReturnSelectedPictureAsUrl(IBrowserFile selectedImage);
+        Task<PictureInformation> ReturnSelectedPictureAsUrl(PictureFile file);
     }
 }

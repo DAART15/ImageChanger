@@ -1,15 +1,24 @@
 ﻿using ImageChanger.Interfaces;
-using Microsoft.AspNetCore.Components.Forms;
+using ImageChanger.Models;
+using System.Drawing;
 
 namespace ImageChanger.Services
 {
     public class SelectedPictureShowService : ISelectedPictureShowService
     {
-        public async Task<string> ReturnSelectedPictureAsUrl(IBrowserFile selectedImage)
+        public async Task<PictureInformation> ReturnSelectedPictureAsUrl(PictureFile file)
         {
             using var memoryStream = new MemoryStream();
-            await selectedImage.OpenReadStream(long.MaxValue).CopyToAsync(memoryStream);
-            return $"data:{selectedImage.ContentType};base64,{Convert.ToBase64String(memoryStream.ToArray())}";
+            await file.File.OpenReadStream(long.MaxValue).CopyToAsync(memoryStream);
+            using Bitmap bitmap = new Bitmap(memoryStream);
+            var pictureInformation = new PictureInformation
+            {
+                Width = bitmap.Width,
+                Height = bitmap.Height,
+                Format = bitmap.RawFormat.ToString(),
+                Url = $"data:{file.File.ContentType};base64,{Convert.ToBase64String(memoryStream.ToArray())}"
+            };
+            return pictureInformation;
         }
     }
 }

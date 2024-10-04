@@ -14,6 +14,7 @@ namespace ImageChanger
             builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();
             builder.Services.AddScoped<ISelectedPictureShowService, SelectedPictureShowService>();
+            builder.Services.AddScoped<IPictureResizeService, PictureResizeService>();
 
             var app = builder.Build();
 

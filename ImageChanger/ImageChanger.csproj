@@ -13,4 +13,8 @@
     <None Remove="wwwroot\bootstrap-icons-1.11.3\**" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="System.Drawing.Common" Version="8.0.8" />
+  </ItemGroup>
+
 </Project>
