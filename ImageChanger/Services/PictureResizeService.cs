@@ -1,59 +1,13 @@
 ﻿using ImageChanger.Interfaces;
 using ImageChanger.Models;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 
 namespace ImageChanger.Services
 {
     public class PictureResizeService : IPictureResizeService
     {
-        public async Task<PictureInformation> ResizePicture(PictureFile file,int maxWH, int width, int height, string format)
-        {
-            
-            using var stream = new MemoryStream();
-            await file.File.OpenReadStream(long.MaxValue).CopyToAsync(stream);
-            using Bitmap bitmap = new Bitmap(stream);
-            Image thumbnail;
-            using var streamForBytes = new MemoryStream();
-            if (format != "Jpeg" && maxWH == 0 && width == 0 && height == 0)
-            {
-                /*thumbnail = bitmap.GetThumbnailImage(bitmap.Width, bitmap.Height, null, IntPtr.Zero);
-                thumbnail.Save(streamForBytes, GetFormat(format));*/
-                thumbnail = ChangeImageFornat(bitmap, format);
-                
-            }
-            else if (maxWH > 0)
-            {
-                Size thumbnailSize = GetThumbnailSize(bitmap, maxWH);
-                thumbnail = bitmap.GetThumbnailImage(thumbnailSize.Width, thumbnailSize.Height, null, IntPtr.Zero);
-                var formatForChange = GetFormat(format);
-                thumbnail.Save(streamForBytes, formatForChange);
-            }
-            else
-            {
-                thumbnail = bitmap.GetThumbnailImage(width, height, null, IntPtr.Zero);
-                thumbnail.Save(streamForBytes, GetFormat(format));
-            }
-            byte[] fileBytes = streamForBytes.ToArray();
-            var pictureInformation = new PictureInformation
-            {
-                Width = thumbnail.Width,
-                Height = thumbnail.Height,
-                Format = thumbnail.RawFormat.ToString(),
-                FileName = file.File.Name,
-                FileSize = fileBytes.Length,
-                Url = $"data:{file.File.ContentType};base64,{Convert.ToBase64String(fileBytes)}"
-            };
-            return pictureInformation;
-        }
-        private Image ChangeImageFornat(Bitmap bitmap, string format)
-        {
-            using var stream = new MemoryStream();
-            //var formatForChange = GetFormat(format);
-            bitmap.Save(stream, ImageFormat.Icon);
-            stream.Position = 0;
-            return Image.FromStream(stream);
-        }
         private ImageFormat GetFormat(string format)
         {
             switch (format)
@@ -82,19 +36,13 @@ namespace ImageChanger.Services
                     return ImageFormat.Jpeg;
             }
         }
-        private static Size GetThumbnailSize(Bitmap original, int maxWH)
+        private static Size GetSize(Bitmap original, int maxWH)
         {
             int maxPixels = maxWH;
-
             int originalWidth = original.Width;
             int originalHeight = original.Height;
-
-            if (originalWidth <= maxPixels && originalHeight <= maxPixels)
-            {
-                return new Size(originalWidth, originalHeight);
-            }
-
             double factor;
+
             if (originalWidth > originalHeight)
             {
                 factor = (double)maxPixels / originalWidth;
@@ -105,6 +53,111 @@ namespace ImageChanger.Services
             }
 
             return new Size((int)(originalWidth * factor), (int)(originalHeight * factor));
+
+        }
+        private ImageCodecInfo GetEncoder(ImageFormat format)
+        {
+            var codecs = ImageCodecInfo.GetImageDecoders();
+            foreach (var codec in codecs)
+            {
+                if (codec.FormatID == format.Guid)
+                {
+                    return codec;
+                }
+            }
+            return null;
+        }
+        public async Task<byte[]> ChangeSizeBySpecificWH(PictureFile file, int width, int height, string format, bool changeFormat)
+        {
+            using var stream = new MemoryStream();
+            await file.File.OpenReadStream(long.MaxValue).CopyToAsync(stream);
+            stream.Position = 0;
+            using Bitmap bitmap = new Bitmap(stream);
+            if (!changeFormat)
+            {
+                format = bitmap.RawFormat.ToString();
+            }
+            using var streamForBytes = new MemoryStream();
+            using var resizedBitmap = new Bitmap(width, height);
+            using (var graphics = Graphics.FromImage(resizedBitmap))
+            {
+                graphics.CompositingQuality = CompositingQuality.HighQuality;
+                graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                graphics.SmoothingMode = SmoothingMode.HighQuality;
+                graphics.DrawImage(bitmap, 0, 0, width, height);
+            }
+            var imageFormat = GetFormat(format);
+            var encoder = GetEncoder(imageFormat);
+            if (format == "Jpeg" && encoder != null)
+            {
+                var encoderParams = new EncoderParameters(1);
+                encoderParams.Param[0] = new EncoderParameter(Encoder.Quality, 100L);
+                resizedBitmap.Save(streamForBytes, encoder, encoderParams);
+            }
+            else
+            {
+                resizedBitmap.Save(streamForBytes, imageFormat);
+            }
+            streamForBytes.Position = 0;
+            return streamForBytes.ToArray();
+        }
+        public async Task<byte[]> ChangeSizeByMaxWH(PictureFile file, int maxWH, string format, bool changeFormat)
+        {
+            using var stream = new MemoryStream();
+            await file.File.OpenReadStream(long.MaxValue).CopyToAsync(stream);
+            stream.Position = 0;
+            using Bitmap bitmap = new Bitmap(stream);
+            if (!changeFormat)
+            {
+                format = bitmap.RawFormat.ToString();
+            }
+            using var streamForBytes = new MemoryStream();
+            Size newSize = GetSize(bitmap, maxWH);
+            using var resizedBitmap = new Bitmap(newSize.Width, newSize.Height);
+            using (var graphics = Graphics.FromImage(resizedBitmap))
+            {
+                graphics.CompositingQuality = CompositingQuality.HighQuality;
+                graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                graphics.SmoothingMode = SmoothingMode.HighQuality;
+                graphics.DrawImage(bitmap, 0, 0, newSize.Width, newSize.Height);
+            }
+            var imageFormat = GetFormat(format);
+            var encoder = GetEncoder(imageFormat);
+            if (format == "Jpeg" && encoder != null)
+            {
+                var encoderParams = new EncoderParameters(1);
+                encoderParams.Param[0] = new EncoderParameter(Encoder.Quality, 100L);
+                resizedBitmap.Save(streamForBytes, encoder, encoderParams);
+            }
+            else
+            {
+                resizedBitmap.Save(streamForBytes, imageFormat);
+            }
+            streamForBytes.Position = 0;
+            return streamForBytes.ToArray();
+        }
+        public async Task<byte[]> ChangeJustFormat(PictureFile file, string format)
+        {
+            using var stream = new MemoryStream();
+            await file.File.OpenReadStream(long.MaxValue).CopyToAsync(stream);
+            stream.Position = 0;
+            using Bitmap bitmap = new Bitmap(stream);
+            using var streamForBytes = new MemoryStream();
+            var imageFormat = GetFormat(format);
+            if (format == "Jpeg")
+            {
+                var jpegEncoder = GetEncoder(ImageFormat.Jpeg);
+                var encoderParams = new EncoderParameters(1);
+                encoderParams.Param[0] = new EncoderParameter(Encoder.Quality, 100L);
+
+                bitmap.Save(streamForBytes, jpegEncoder, encoderParams);
+            }
+            else
+            {
+                bitmap.Save(streamForBytes, imageFormat);
+            }
+            streamForBytes.Position = 0;
+            return streamForBytes.ToArray();
         }
     }
 }

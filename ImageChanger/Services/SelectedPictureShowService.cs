@@ -20,5 +20,21 @@ namespace ImageChanger.Services
             };
             return pictureInformation;
         }
+
+        public async Task<PictureInformation> ReturnSelectedPictureAsUrl(byte[] bytes)
+        {
+            using var memoryStream = new MemoryStream(bytes);
+            using Bitmap bitmap = new Bitmap(memoryStream);
+            var pictureInformation = new PictureInformation
+            {
+                Width = bitmap.Width,
+                Height = bitmap.Height,
+                Format = bitmap.RawFormat.ToString(),
+                FileName = "New Changed",
+                FileSize = bytes.Length,
+                Url = $"data:New Changed;base64,{Convert.ToBase64String(bytes)}"
+            };
+            return pictureInformation;
+        }
     }
 }

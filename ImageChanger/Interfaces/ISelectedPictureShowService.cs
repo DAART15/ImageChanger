@@ -6,5 +6,6 @@ namespace ImageChanger.Interfaces
     public interface ISelectedPictureShowService
     {
         Task<PictureInformation> ReturnSelectedPictureAsUrl(PictureFile file);
+        Task<PictureInformation> ReturnSelectedPictureAsUrl(byte[] bytes);
     }
 }

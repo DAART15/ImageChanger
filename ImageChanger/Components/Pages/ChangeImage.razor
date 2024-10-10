@@ -1,7 +1,8 @@
-﻿@page "/imagechange"
+﻿@page "/"
 @rendermode InteractiveServer
 @inject ISelectedPictureShowService selectedPictureShowService
 @inject IPictureResizeService pictureResizeService
+@inject IJSRuntime JS
 <h2>Image Changer</h2>
 
 <div class="form-control" style="margin:20px;width: 1230px">
@@ -24,10 +25,7 @@
         <br />
         <label>Height (px): @pictureInformation.Height </label>
         <br />
-        @if (!string.IsNullOrEmpty(pictureInformation.Url))
-        {
-            <img src="@pictureInformation.Url" alt="Image" style="max-width:1200px;" />
-        }
+        <img src="@pictureInformation.Url" alt="Image" style="max-width:1200px;" />
     }
 </div>
 
@@ -85,7 +83,7 @@
         }
         <button class="btn btn-primary" @onclick="DoChanges">Do Changes</button>
     </div>
-    @if (pictureInformation2.Url != null)
+    @if (bytes != null)
     {
         <div class="form-control" style="margin:20px;width: 1230px">
             <label>Changed Image</label>
@@ -105,7 +103,7 @@
             <br />
             <img src="@pictureInformation2.Url" alt="Image" style="max-width:1200px;" />
         </div>
-        <button class="btn btn-primary" >Download</button>
+        <button class="btn btn-primary" @onclick="DownloadImage">Download as @pictureInformation2.Format format</button>
     }
 }
 
@@ -113,20 +111,22 @@
     private PictureInformation pictureInformation = new PictureInformation();
     private PictureInformation pictureInformation2 = new PictureInformation();
     private PictureFile pictureFile = new PictureFile();
-    private string? changedImageUrl;
     private bool isSelectedFormatOption = false;
-    private string? selectedOutputFormat;
+    private string selectedOutputFormat;
     private bool changeSize = false;
     private bool maxWH = false;
     private bool specificWH = false;
     private int maxOutputSize = 0;
     private int outputWidth = 0;
     private int outputHeight = 0;
+    private byte[] bytes = null;
 
     private async Task HandleSelectedImage(InputFileChangeEventArgs e)
     {
+        bytes = null;
         pictureFile.File = e.File;
         pictureInformation = await selectedPictureShowService.ReturnSelectedPictureAsUrl(pictureFile);
+        StateHasChanged();
     }
     private void ToggleMaxWH(ChangeEventArgs e)
     {
@@ -149,8 +149,27 @@
         }
     }
 
-    private async void DoChanges()
+    private async Task DoChanges()
     {
-        pictureInformation2 = await pictureResizeService.ResizePicture(pictureFile, maxOutputSize, outputWidth, outputHeight, selectedOutputFormat);
+        bytes = null;
+        if (isSelectedFormatOption && !changeSize)
+        {
+            bytes = await pictureResizeService.ChangeJustFormat(pictureFile, selectedOutputFormat);
+        }
+        else if (changeSize && maxWH)
+        {
+            bytes = await pictureResizeService.ChangeSizeByMaxWH(pictureFile, maxOutputSize, selectedOutputFormat, isSelectedFormatOption);
+        }
+        else if (changeSize && specificWH)
+        {
+            bytes = await pictureResizeService.ChangeSizeBySpecificWH(pictureFile, outputWidth, outputHeight, selectedOutputFormat, isSelectedFormatOption);
+        }
+        pictureInformation2 = await selectedPictureShowService.ReturnSelectedPictureAsUrl(bytes);
+        StateHasChanged();
+    }
+    private async Task DownloadImage()
+    {
+        await JS.InvokeVoidAsync("downloadFileFromUrl", pictureInformation2.Url, $"{pictureInformation2.FileName}.{pictureInformation2.Format.ToLower()}");
+        
     }
 }   
