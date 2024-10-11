@@ -3,38 +3,19 @@ using ImageChanger.Models;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
-
 namespace ImageChanger.Services
 {
     public class PictureResizeService : IPictureResizeService
     {
         private ImageFormat GetFormat(string format)
         {
-            switch (format)
+            return format switch
             {
-                case "Jpeg":
-                    return ImageFormat.Jpeg;
-                case "Icon":
-                    return ImageFormat.Icon;
-                case "Png":
-                    return ImageFormat.Png;
-                case "Gif":
-                    return ImageFormat.Gif;
-                case "Tiff":
-                    return ImageFormat.Tiff;
-                case "Exif":
-                    return ImageFormat.Exif;
-                case "Emf":
-                    return ImageFormat.Emf;
-                case "Bmp":
-                    return ImageFormat.Bmp;
-                case "Wmf":
-                    return ImageFormat.Wmf;
-                case "MemoryBmp":
-                    return ImageFormat.MemoryBmp;
-                default:
-                    return ImageFormat.Jpeg;
-            }
+                "Jpeg" => ImageFormat.Jpeg,
+                "Png" => ImageFormat.Png,
+                "Gif" => ImageFormat.Gif,
+                _ => ImageFormat.Jpeg
+            };
         }
         private static Size GetSize(Bitmap original, int maxWH)
         {
@@ -67,7 +48,7 @@ namespace ImageChanger.Services
             }
             return null;
         }
-        public async Task<byte[]> ChangeSizeBySpecificWH(PictureFile file, int width, int height, string format, bool changeFormat)
+        public async Task<byte[]> ChangeSizeBySpecificWHAsync(PictureFile file, int width, int height, string format, bool changeFormat)
         {
             using var stream = new MemoryStream();
             await file.File.OpenReadStream(long.MaxValue).CopyToAsync(stream);
@@ -101,7 +82,7 @@ namespace ImageChanger.Services
             streamForBytes.Position = 0;
             return streamForBytes.ToArray();
         }
-        public async Task<byte[]> ChangeSizeByMaxWH(PictureFile file, int maxWH, string format, bool changeFormat)
+        public async Task<byte[]> ChangeSizeByMaxWHAsync(PictureFile file, int maxWH, string format, bool changeFormat)
         {
             using var stream = new MemoryStream();
             await file.File.OpenReadStream(long.MaxValue).CopyToAsync(stream);
@@ -136,7 +117,7 @@ namespace ImageChanger.Services
             streamForBytes.Position = 0;
             return streamForBytes.ToArray();
         }
-        public async Task<byte[]> ChangeJustFormat(PictureFile file, string format)
+        public async Task<byte[]> ChangeJustFormatAsync(PictureFile file, string format)
         {
             using var stream = new MemoryStream();
             await file.File.OpenReadStream(long.MaxValue).CopyToAsync(stream);
@@ -149,7 +130,6 @@ namespace ImageChanger.Services
                 var jpegEncoder = GetEncoder(ImageFormat.Jpeg);
                 var encoderParams = new EncoderParameters(1);
                 encoderParams.Param[0] = new EncoderParameter(Encoder.Quality, 100L);
-
                 bitmap.Save(streamForBytes, jpegEncoder, encoderParams);
             }
             else

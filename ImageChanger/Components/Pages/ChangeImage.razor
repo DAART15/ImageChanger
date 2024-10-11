@@ -4,7 +4,7 @@
 @inject IPictureResizeService pictureResizeService
 @inject IJSRuntime JS
 <h2>Image Changer</h2>
-
+<h4>Image Changer was created as helper to multi change options for resize and change format for image. Say thanks to DAART15</h4>
 <div class="form-control" style="margin:20px;width: 1230px">
     <label for="Image">Select Picture</label>
     <InputFile id="Image" OnChange="HandleSelectedImage" class="form-control" />
@@ -39,15 +39,8 @@
         {
             <select @bind="selectedOutputFormat" class="form-control">
                 <option value="Jpeg" selected>JPG</option>
-                <option value="Icon">ICON</option>
                 <option value="Png">PNG</option>
                 <option value="Gif">GIF</option>
-                <option value="Tiff">TIFF</option>
-                <option value="Exif">Exif</option>
-                <option value="Emf">Emf</option>
-                <option value="Bmp">Bmp</option>
-                <option value="Wmf">Wmf</option>
-                <option value="MemoryBmp">Memory Bmp</option>
             </select>
         }
         <br />
@@ -94,7 +87,6 @@
             <br />
             <label>Size: @(Math.Round(pictureInformation2.FileSize.Value / 1024.0, 2)) KB</label>
             <br />
-
             <label>Format: @pictureInformation2.Format </label>
             <br />
             <label>Width (px): @pictureInformation2.Width </label>
@@ -102,8 +94,11 @@
             <label>Height (px): @pictureInformation2.Height </label>
             <br />
             <img src="@pictureInformation2.Url" alt="Image" style="max-width:1200px;" />
+            <br />
+            <button class="btn btn-primary" @onclick="DownloadImage">Download as @pictureInformation2.Format format</button>
         </div>
-        <button class="btn btn-primary" @onclick="DownloadImage">Download as @pictureInformation2.Format format</button>
+        <br />
+        <br />
     }
 }
 
@@ -154,22 +149,26 @@
         bytes = null;
         if (isSelectedFormatOption && !changeSize)
         {
-            bytes = await pictureResizeService.ChangeJustFormat(pictureFile, selectedOutputFormat);
+            bytes = await pictureResizeService.ChangeJustFormatAsync(pictureFile, selectedOutputFormat);
         }
-        else if (changeSize && maxWH)
+        if (changeSize && maxWH)
         {
-            bytes = await pictureResizeService.ChangeSizeByMaxWH(pictureFile, maxOutputSize, selectedOutputFormat, isSelectedFormatOption);
+            bytes = await pictureResizeService.ChangeSizeByMaxWHAsync(pictureFile, maxOutputSize, selectedOutputFormat, isSelectedFormatOption);
         }
-        else if (changeSize && specificWH)
+        if (changeSize && specificWH)
         {
-            bytes = await pictureResizeService.ChangeSizeBySpecificWH(pictureFile, outputWidth, outputHeight, selectedOutputFormat, isSelectedFormatOption);
+            bytes = await pictureResizeService.ChangeSizeBySpecificWHAsync(pictureFile, outputWidth, outputHeight, selectedOutputFormat, isSelectedFormatOption);
+        }
+        else
+        {
+            return;
         }
         pictureInformation2 = await selectedPictureShowService.ReturnSelectedPictureAsUrl(bytes);
         StateHasChanged();
     }
     private async Task DownloadImage()
     {
-        await JS.InvokeVoidAsync("downloadFileFromUrl", pictureInformation2.Url, $"{pictureInformation2.FileName}.{pictureInformation2.Format.ToLower()}");
+        await JS.InvokeVoidAsync("downloadFileFromUrl", pictureInformation2.Url, $"New {pictureInformation2.Width}x{pictureInformation2.Height}.{pictureInformation2.Format.ToLower()}");
         
     }
 }   
