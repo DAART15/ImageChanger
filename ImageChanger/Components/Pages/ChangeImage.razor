@@ -151,11 +151,11 @@
         {
             bytes = await pictureResizeService.ChangeJustFormatAsync(pictureFile, selectedOutputFormat);
         }
-        if (changeSize && maxWH)
+        else if (changeSize && maxWH)
         {
             bytes = await pictureResizeService.ChangeSizeByMaxWHAsync(pictureFile, maxOutputSize, selectedOutputFormat, isSelectedFormatOption);
         }
-        if (changeSize && specificWH)
+        else if (changeSize && specificWH)
         {
             bytes = await pictureResizeService.ChangeSizeBySpecificWHAsync(pictureFile, outputWidth, outputHeight, selectedOutputFormat, isSelectedFormatOption);
         }
